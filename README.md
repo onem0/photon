@@ -8,6 +8,7 @@ Läuft als eigener Dienst neben dem [Overpass-Server](https://github.com/onem0/O
 
 - Domain auf Port **2322** zeigen lassen.
 - `PHOTON_API_KEY` setzen. Requests ohne Header `X-Photon-Key: <key>` bekommen 403.
+- In Coolify unter *Advanced* „Escape special characters in labels“ **ausschalten**. Sonst landet `${PHOTON_API_KEY}` wörtlich im Caddy-Label, Caddy macht daraus `$`, und jeder kommt mit `X-Photon-Key: $` durch.
 - Platz auf `/srv/photon`:
   - Erste Installation: ca. 160 GB frei (Download ca. 61 GB, entpackt ca. 100 GB).
   - Update alle 30 Tage mit `UPDATE_STRATEGY=PARALLEL`: ca. 260 GB, die Suche läuft weiter.
