@@ -21,8 +21,10 @@ services:
       - UPDATE_STRATEGY=PARALLEL
       - UPDATE_INTERVAL=30d
 
-      # Java nimmt standardmäßig bis zu 1/4 des RAM. Bei Bedarf festlegen:
-      # - JAVA_PARAMS=-Xmx16g
+      # Photon empfiehlt für den Planeten 64 GB RAM, läuft aber auch mit weniger.
+      # Der Contabo-Server hat ca. 18 GB; der Rest bleibt für Overpass und den
+      # Dateicache, aus dem Photon liest.
+      - JAVA_PARAMS=-Xmx6g
 
     healthcheck:
       test: 'curl -f http://localhost:2322/status || exit 1'
