@@ -68,9 +68,12 @@ services:
       - IMPORT_MODE=db
       - REGION=planet
 
-      # Monatliche Updates lädt das Image selbst, mit einer Verbindung vom
-      # Community-Mirror (r2.koalasec.org, schnell). Der Mirror setzt nicht
-      # immer fort; bei einem Abbruch beginnt der Download dann neu.
+      # Monatliche Updates lädt das Image selbst, mit einer Verbindung, von
+      # GraphHopper. Archiv und MD5 kommen dabei von derselben Quelle; deshalb
+      # die offizielle statt des Community-Mirrors. Langsamer, aber der alte
+      # Index sucht währenddessen weiter (PARALLEL), und GraphHopper setzt
+      # nach Abbrüchen fort.
+      - BASE_URL=https://download1.graphhopper.com/public
       - DOWNLOAD_MAX_RETRIES=10
 
       # Neuen Index neben dem alten laden und dann tauschen; die Suche läuft weiter.
