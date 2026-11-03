@@ -16,6 +16,13 @@ services:
       - IMPORT_MODE=db
       - REGION=planet
 
+      # Offizielle Quelle statt des Community-Mirrors (r2.koalasec.org).
+      # Der Mirror ignoriert Range-Requests: bricht die Verbindung ab,
+      # fängt der Download bei 0 an. GraphHopper setzt fort, wo er abbrach,
+      # deshalb lohnen sich auch mehr Wiederholungen.
+      - BASE_URL=https://download1.graphhopper.com/public
+      - DOWNLOAD_MAX_RETRIES=10
+
       # Neuen Index neben dem alten laden und dann tauschen; die Suche läuft weiter.
       # Braucht beim Update ca. 260 GB. SEQUENTIAL: ca. 160 GB, aber stundenlang offline.
       - UPDATE_STRATEGY=PARALLEL

@@ -15,7 +15,7 @@ Läuft als eigener Dienst neben dem [Overpass-Server](https://github.com/onem0/O
   - Mit `SEQUENTIAL` reichen ca. 160 GB, die Suche ist dann aber während des Updates mehrere Stunden weg.
 - Erster Download und Entpacken dauern mehrere Stunden. Bis dahin steht der Container auf `starting`.
 
-Der Index kommt standardmäßig von einem Community-Mirror des Image-Autors. Offizielle Quelle: `BASE_URL=https://download1.graphhopper.com/public`.
+Der Index kommt von GraphHopper (`BASE_URL=https://download1.graphhopper.com/public`). Der Standard-Mirror des Images (`r2.koalasec.org`) ignoriert Range-Requests, sodass ein abgebrochener Download von vorn beginnt.
 
 ## API
 
