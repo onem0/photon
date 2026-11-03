@@ -1,0 +1,30 @@
+services:
+  photon:
+    image: 'rtuszik/photon-docker:2.5.0'
+    container_name: photon
+    restart: unless-stopped
+
+    labels:
+      caddy_0.@unauthorized.not: "header X-Photon-Key ${PHOTON_API_KEY}"
+      caddy_0.handle_path.respond: '@unauthorized "Forbidden" 403'
+
+    volumes:
+      - '/srv/photon/data:/photon/data'
+
+    environment:
+      # Fertigen Planet-Index herunterladen (ca. 61 GB, entpackt ca. 100 GB).
+      - IMPORT_MODE=db
+      - REGION=planet
+
+      # Neuen Index neben dem alten laden und dann tauschen; die Suche läuft weiter.
+      # Braucht beim Update ca. 260 GB. SEQUENTIAL: ca. 160 GB, aber stundenlang offline.
+      - UPDATE_STRATEGY=PARALLEL
+      - UPDATE_INTERVAL=30d
+
+      # Java nimmt standardmäßig bis zu 1/4 des RAM. Bei Bedarf festlegen:
+      # - JAVA_PARAMS=-Xmx16g
+
+    healthcheck:
+      test: 'curl -f http://localhost:2322/status || exit 1'
+      # Erster Download und Entpacken dauern mehrere Stunden.
+      start_period: 24h
