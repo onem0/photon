@@ -13,9 +13,9 @@ Läuft als eigener Dienst neben dem [Overpass-Server](https://github.com/onem0/O
   - Erste Installation: ca. 160 GB frei (Download ca. 61 GB, entpackt ca. 100 GB).
   - Update alle 30 Tage mit `UPDATE_STRATEGY=PARALLEL`: ca. 260 GB, die Suche läuft weiter.
   - Mit `SEQUENTIAL` reichen ca. 160 GB, die Suche ist dann aber während des Updates mehrere Stunden weg.
-- Erster Download und Entpacken dauern mehrere Stunden. Bis dahin steht der Container auf `starting`.
+- Erster Download und Entpacken: mit 200 Mbit/s gut eine Stunde. Fortschritt in den Logs von `photon-download`. Bis dahin steht `photon` auf `starting`.
 
-Der Index kommt von GraphHopper (`BASE_URL=https://download1.graphhopper.com/public`). Der Standard-Mirror des Images (`r2.koalasec.org`) ignoriert Range-Requests, sodass ein abgebrochener Download von vorn beginnt.
+Den ersten Index lädt der Dienst `photon-download` mit aria2c, von `r2.koalasec.org` und GraphHopper zugleich. Er setzt nach Abbrüchen und Neustarts fort, prüft die MD5 und entpackt nach `/srv/photon/data/photon_data`. `photon` wartet so lange und startet dann ohne eigenen Download. Monatliche Updates lädt das Image selbst (eine Verbindung, `r2.koalasec.org`).
 
 ## API
 

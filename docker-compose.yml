@@ -1,4 +1,44 @@
 services:
+  # Lädt den Planet-Index beim ersten Start schnell herunter und entpackt ihn.
+  # Der eingebaute Downloader des Images nutzt nur eine Verbindung und fängt
+  # bei manchem Abbruch von vorn an. aria2c lädt von beiden Mirrors zugleich,
+  # setzt nach Abbrüchen und Neustarts fort und prüft am Ende die MD5.
+  # Ist der Index schon da, beendet sich der Container sofort.
+  photon-download:
+    image: 'debian:12-slim'
+    restart: on-failure
+    exclude_from_hc: true
+
+    volumes:
+      - '/srv/photon/data:/data'
+
+    entrypoint: ['/bin/bash', '-c']
+    command:
+      - |
+        set -eu -o pipefail
+        if [ -d /data/photon_data/node_1 ]; then echo "Index schon vorhanden, nichts zu tun."; exit 0; fi
+        rm -rf /data/temp
+        apt-get update -qq && apt-get install -y -qq --no-install-recommends aria2 lbzip2 ca-certificates >/dev/null
+        mkdir -p /data/fastdl
+        cd /data/fastdl
+        aria2c -q --allow-overwrite=true -o photon-db-planet-1.0-latest.tar.bz2.md5 https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz2.md5
+        aria2c --continue=true --auto-file-renaming=false --max-tries=0 --retry-wait=10 \
+          --max-connection-per-server=4 --split=8 --min-split-size=1024M --uri-selector=adaptive \
+          --file-allocation=none --show-console-readout=false --summary-interval=60 \
+          --out=photon-db-planet-1.0-latest.tar.bz2 \
+          https://r2.koalasec.org/public/photon-db-planet-1.0-latest.tar.bz2 \
+          https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz2
+        echo "Download fertig, prüfe MD5 ..."
+        md5sum -c photon-db-planet-1.0-latest.tar.bz2.md5 || { rm -f photon-db-planet-1.0-latest.tar.bz2; exit 1; }
+        echo "Entpacke ..."
+        rm -rf photon_data
+        lbzip2 -d -c photon-db-planet-1.0-latest.tar.bz2 | tar x -o -C .
+        touch /data/.photon-index-updated
+        mv photon_data /data/photon_data
+        cd /data
+        rm -rf /data/fastdl
+        echo "Index fertig."
+
   photon:
     image: 'rtuszik/photon-docker:2.5.0'
     container_name: photon
@@ -11,16 +51,26 @@ services:
     volumes:
       - '/srv/photon/data:/photon/data'
 
+    # Wartet, bis photon-download den Index entpackt hat, und startet dann
+    # das Image wie gewohnt (Entrypoint und Command des Images).
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until [ -d /photon/data/photon_data/node_1 ]; do
+          echo "Warte auf den Index von photon-download ..."
+          sleep 60
+        done
+        exec /bin/sh /photon/entrypoint.sh /photon/.venv/bin/python -m src.process_manager
+
     environment:
-      # Fertigen Planet-Index herunterladen (ca. 61 GB, entpackt ca. 100 GB).
+      # Fertigen Planet-Index nutzen (ca. 59 GB Download, entpackt ca. 96 GB).
       - IMPORT_MODE=db
       - REGION=planet
 
-      # Offizielle Quelle statt des Community-Mirrors (r2.koalasec.org).
-      # Der Mirror ignoriert Range-Requests: bricht die Verbindung ab,
-      # fängt der Download bei 0 an. GraphHopper setzt fort, wo er abbrach,
-      # deshalb lohnen sich auch mehr Wiederholungen.
-      - BASE_URL=https://download1.graphhopper.com/public
+      # Monatliche Updates lädt das Image selbst, mit einer Verbindung vom
+      # Community-Mirror (r2.koalasec.org, schnell). Der Mirror setzt nicht
+      # immer fort; bei einem Abbruch beginnt der Download dann neu.
       - DOWNLOAD_MAX_RETRIES=10
 
       # Neuen Index neben dem alten laden und dann tauschen; die Suche läuft weiter.
@@ -35,5 +85,5 @@ services:
 
     healthcheck:
       test: 'curl -f http://localhost:2322/status || exit 1'
-      # Erster Download und Entpacken dauern mehrere Stunden.
+      # Erster Download und Entpacken dauern.
       start_period: 24h
